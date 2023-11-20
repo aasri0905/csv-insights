@@ -1,4 +1,5 @@
 # csv-insights
+# [`Demo video`](https://drive.google.com/file/d/14sWuJ7sYpELSb85nhNT_yEaOXgahqWQz/view?usp=sharing)
 following project is my assignment submission for tensorgo
 
 ## Installation guide
