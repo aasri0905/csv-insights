@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 import json
+import matplotlib.pyplot as plt
 
-from agent import query_agent, create_agent
-
+from agent import query_agent, create_agent  
 
 def decode_response(response: str) -> dict:
     """This function converts the string response from the model to a dictionary object.
@@ -27,7 +27,7 @@ def write_response(response_dict: dict):
     Returns:
         None.
     """
-
+    print(response_dict)
     # Check if the response is an answer.
     if "answer" in response_dict:
         st.write(response_dict["answer"])
@@ -51,7 +51,17 @@ def write_response(response_dict: dict):
         data = response_dict["table"]
         df = pd.DataFrame(data["data"], columns=data["columns"])
         st.table(df)
-
+st.markdown(
+    """
+    <style>
+    body {
+        color: black;
+        background-color: #f4f4f4;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 st.title("👨‍💻 Chat with your CSV")
 
@@ -63,7 +73,60 @@ query = st.text_area("Insert your query")
 
 if st.button("Submit Query", type="primary"):
     # Create an agent from the CSV file.
-    agent = create_agent(data)
+    agent, df = create_agent(data)
+    columns = df.columns.tolist()
+
+    selected_row = st.selectbox("Select a row", columns)
+    selected_column = st.selectbox("Select a column", columns)
+
+    visualization_type = st.radio("Select visualization type", ('Scatter Plot', 'Line Graph', 'Bar Chart', 'Pie Chart'))
+
+    if selected_row and selected_column and visualization_type:
+        if visualization_type == 'Scatter Plot':
+            st.write(f"### Scatter Plot between {selected_row} and {selected_column}")
+            if df[selected_row].dtype in ['int', 'float'] and df[selected_column].dtype in ['int', 'float']:
+                plt.figure(figsize=(8, 6))
+                plt.scatter(df[selected_column], df[selected_row], alpha=0.5)
+                plt.xlabel(selected_column)
+                plt.ylabel(selected_row)
+                plt.title(f"{selected_column} vs {selected_row} Scatter Plot")
+                st.pyplot(plt)
+            else:
+                st.write("Please select columns with numerical data for plotting.")
+
+        elif visualization_type == 'Line Graph':
+            st.write(f"### Line Graph for {selected_column}")
+            if df[selected_column].dtype in ['int', 'float']:
+                plt.figure(figsize=(8, 6))
+                plt.plot(df[selected_column])
+                plt.xlabel("Index")
+                plt.ylabel(selected_column)
+                plt.title(f"Line Graph for {selected_column}")
+                st.pyplot(plt)
+            else:
+                st.write("Please select a column with numerical data for plotting.")
+
+        elif visualization_type == 'Bar Chart':
+            st.write(f"### Bar Chart for {selected_column}")
+            if df[selected_column].dtype in ['int', 'float']:
+                plt.figure(figsize=(8, 6))
+                df[selected_column].plot(kind='bar')
+                plt.xlabel("Index")
+                plt.ylabel(selected_column)
+                plt.title(f"Bar Chart for {selected_column}")
+                st.pyplot(plt)
+            else:
+                st.write("Please select a column with numerical data for plotting.")
+
+        elif visualization_type == 'Pie Chart':
+            st.write(f"### Pie Chart for {selected_column}")
+            if df[selected_column].dtype in ['int', 'float']:
+                plt.figure(figsize=(8, 6))
+                df[selected_column].plot(kind='pie')
+                plt.title(f"Pie Chart for {selected_column}")
+                st.pyplot(plt)
+            else:
+                st.write("Please select a column with numerical data for plotting.")
 
     # Query the agent.
     response = query_agent(agent=agent, query=query)
